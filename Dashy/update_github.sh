@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Change to the directory of your Git repository
-cd /home/kaj/homelab
+cd /home/directory/directory
 
 # Add all changes to the staging area
 git add *
