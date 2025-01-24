@@ -1,0 +1,412 @@
+{
+  "name": "Content Assistant",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5b69bbfa-4168-4bef-beae-f90ef4c87468",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "cyberme-video",
+        "fileName": "={{ $json.fileName }}",
+        "binaryPropertyName": "=data",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.awsS3",
+      "typeVersion": 2,
+      "position": [
+        920,
+        0
+      ],
+      "id": "3fd6b39c-524f-4c0a-9e81-1c35277a06ff",
+      "name": "AWS S3",
+      "credentials": {
+        "aws": {
+          "id": "stdvfqg4CqXt74r2",
+          "name": "AWS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/files/{{ $json.stdout }}",
+        "options": {
+          "fileName": "={{ $json.stdout }}"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ],
+      "id": "1923fb71-b437-445c-8aa6-192fbd9e4136",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b8bcb4b3-0e99-44c7-bd07-a5909a4df2ee",
+              "name": "fileName",
+              "value": "={{ $json.fileName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        360,
+        240
+      ],
+      "id": "b16692a3-833d-4a3a-8398-c8962441803f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "function": "arn:aws:lambda:us-east-1:225808899840:function:contentAssistantFunction",
+        "payload": "={\n    \"fileName\": \"{{ $json.fileName }}\"\n}\n"
+      },
+      "type": "n8n-nodes-base.awsLambda",
+      "typeVersion": 1,
+      "position": [
+        620,
+        300
+      ],
+      "id": "ea8bc7c6-bb6d-43f8-a79f-47e48376d716",
+      "name": "AWS Lambda",
+      "credentials": {
+        "aws": {
+          "id": "stdvfqg4CqXt74r2",
+          "name": "AWS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "function": "arn:aws:lambda:us-east-1:225808899840:function:contentAssistTranscribe",
+        "payload": "={\n  \"file_uri\": \"{{ $json.result.body }}\",\n  \"job_name\": \"{{ $json.fileName }}\"\n}"
+      },
+      "type": "n8n-nodes-base.awsLambda",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        260
+      ],
+      "id": "a06955df-0aab-45cf-963e-459c10b67a99",
+      "name": "AWS Lambda1",
+      "credentials": {
+        "aws": {
+          "id": "stdvfqg4CqXt74r2",
+          "name": "AWS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        260
+      ],
+      "id": "e60ef67b-8ab8-402e-b9a3-5944d2ee35e7",
+      "name": "Wait",
+      "webhookId": "4f5daa21-3334-423f-8000-70eb98c4f15b"
+    },
+    {
+      "parameters": {
+        "bucketName": "cyberme-video",
+        "fileKey": "={{ $json[\"fileName\"] + \".srt\" }}"
+      },
+      "type": "n8n-nodes-base.awsS3",
+      "typeVersion": 2,
+      "position": [
+        440,
+        500
+      ],
+      "id": "b121ec92-b458-48aa-80ab-a62d140d50a4",
+      "name": "AWS S31",
+      "credentials": {
+        "aws": {
+          "id": "stdvfqg4CqXt74r2",
+          "name": "AWS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/files/{{ $json.fileName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        740,
+        500
+      ],
+      "id": "340fa8ff-8e1c-4abe-8310-dc82ea01f7fe",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        940,
+        500
+      ],
+      "id": "374f36e0-379a-460a-8e50-e8f960f70b05",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        640
+      ],
+      "id": "ad6c413e-66c7-4632-af39-1215148621c6",
+      "name": "When chat message received",
+      "webhookId": "8e2b05cd-6fa5-41bf-88bb-ed5f810709f8"
+    },
+    {
+      "parameters": {
+        "resource": "assistant",
+        "assistantId": {
+          "__rl": true,
+          "value": "asst_GjTyppyr4MPEIuFocmxblRTe",
+          "mode": "list",
+          "cachedResultName": "Content_assistant2.0"
+        },
+        "prompt": "define",
+        "text": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        580,
+        760
+      ],
+      "id": "8f6a7282-8e7a-4648-b581-dfe004fe652e",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "eiIt6CxDMi7HRBun",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "ls /files | grep \"\\.mp4$\"\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "c000ae2b-01cc-49b0-97b9-2013eddefe20",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        880,
+        260
+      ],
+      "id": "316d2d49-529d-47d7-8e3d-2f36b51ee2df",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AWS S3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AWS S31",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AWS Lambda",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AWS Lambda": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "AWS Lambda1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "AWS S31",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AWS S31": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AWS Lambda1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c67a2fc1-0c08-4e94-bf98-b8658e460d70",
+  "meta": {
+    "instanceId": "599ac0cd530c79ba094ed3b33238717d87dd0da7382278dcb3fb02457c64634a"
+  },
+  "id": "Bj6GagBsSDvb78a1",
+  "tags": []
+}
